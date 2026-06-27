@@ -1,0 +1,15 @@
+# Maven
+backend/target/
+*.class
+*.jar
+
+# IntelliJ
+.idea/
+*.iml
+
+# macOS
+.DS_Store
+
+# Environment
+*.env
+application-local.properties

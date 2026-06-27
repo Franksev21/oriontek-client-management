@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: oriontek-db
+    environment:
+      POSTGRES_DB: oriontek
+      POSTGRES_USER: oriontek
+      POSTGRES_PASSWORD: oriontek123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oriontek"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: oriontek-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/oriontek
+      SPRING_DATASOURCE_USERNAME: oriontek
+      SPRING_DATASOURCE_PASSWORD: oriontek123
+      SPRING_THREADS_VIRTUAL_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: oriontek-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
