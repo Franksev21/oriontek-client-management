@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clientsApi } from '../services/api'
-import { ArrowLeft, Plus, Trash2, Edit, MapPin, Mail, Phone } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Edit, MapPin, Mail, Phone, Star } from 'lucide-react'
 import ClientFormModal from '../components/clients/ClientFormModal'
 import AddressFormModal from '../components/addresses/AddressFormModal'
 
@@ -25,7 +25,10 @@ export default function ClientDetailPage() {
   })
 
   if (isLoading) return (
-    <div className="text-center py-12 text-gray-400">Cargando...</div>
+    <div className="space-y-4 animate-pulse">
+      <div className="h-8 w-24 bg-gray-200 rounded-lg" />
+      <div className="bg-white rounded-2xl p-6 h-40" />
+    </div>
   )
 
   if (!client) return (
@@ -36,31 +39,32 @@ export default function ClientDetailPage() {
 
   return (
     <div>
-      {/* Back button */}
       <button
         onClick={() => navigate('/')}
-        className="flex items-center gap-2 text-gray-500 hover:text-gray-800 mb-6 transition-colors"
+        className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 mb-5 transition-colors group"
       >
-        <ArrowLeft size={18} />
-        <span className="text-sm">Volver</span>
+        <div className="p-1.5 rounded-lg group-hover:bg-indigo-50 transition-colors">
+          <ArrowLeft size={16} />
+        </div>
+        <span className="text-sm font-medium">Volver</span>
       </button>
 
       {/* Profile card */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-4">
-        <div className="flex items-start justify-between">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 mb-4">
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 pt-6 pb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center">
-              <span className="text-indigo-600 font-bold text-xl">{initials}</span>
+            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center border-2 border-white/40 flex-shrink-0">
+              <span className="text-white font-bold text-lg">{initials}</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">{client.fullName}</h1>
-              <div className="flex items-center gap-1 text-gray-500 text-sm mt-1">
-                <Mail size={14} />
+              <h1 className="text-xl font-bold text-white">{client.fullName}</h1>
+              <div className="flex items-center gap-1.5 text-indigo-200 text-sm mt-1">
+                <Mail size={13} />
                 <span>{client.email}</span>
               </div>
               {client.phone && (
-                <div className="flex items-center gap-1 text-gray-500 text-sm mt-0.5">
-                  <Phone size={14} />
+                <div className="flex items-center gap-1.5 text-indigo-200 text-sm mt-0.5">
+                  <Phone size={13} />
                   <span>{client.phone}</span>
                 </div>
               )}
@@ -68,75 +72,83 @@ export default function ClientDetailPage() {
           </div>
           <button
             onClick={() => setShowEditModal(true)}
-            className="flex items-center gap-1.5 text-sm text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-white border border-white/30 bg-white/20 px-3 py-1.5 rounded-xl hover:bg-white/30 transition-colors flex-shrink-0"
           >
-            <Edit size={14} />
+            <Edit size={13} />
             Editar
           </button>
         </div>
       </div>
 
       {/* Addresses */}
-      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-            <MapPin size={18} className="text-indigo-600" />
-            Direcciones ({client.addresses?.length || 0})
-          </h2>
+          <div>
+            <h2 className="font-bold text-gray-800 flex items-center gap-2">
+              <MapPin size={17} className="text-indigo-500" />
+              Direcciones
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">{client.addresses?.length || 0} registradas</p>
+          </div>
           <button
             onClick={() => { setEditingAddress(null); setShowAddressModal(true) }}
-            className="flex items-center gap-1.5 text-sm bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-1.5 text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1.5 rounded-xl shadow-sm transition-all"
           >
             <Plus size={14} />
             Agregar
           </button>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {client.addresses?.map(address => (
             <div
               key={address.id}
-              className="flex items-start justify-between p-3 rounded-lg border border-gray-100 hover:border-indigo-100 transition-colors"
+              className="flex items-start justify-between p-3.5 rounded-xl border border-gray-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all group"
             >
               <div className="flex items-start gap-3">
-                <MapPin size={16} className="text-indigo-400 mt-0.5 flex-shrink-0" />
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <MapPin size={14} className="text-indigo-500" />
+                </div>
                 <div>
-                  <p className="font-medium text-gray-800 text-sm">{address.street}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {address.city}{address.state ? `, ${address.state}` : ''} — {address.country}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-gray-800 text-sm">{address.street}</p>
+                    {address.primary && (
+                      <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                        <Star size={10} />
+                        Principal
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {address.city}{address.state ? `, ${address.state}` : ''} · {address.country}
                     {address.zipCode ? ` ${address.zipCode}` : ''}
                   </p>
-                  {address.primary && (
-                    <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full mt-1 inline-block">
-                      Principal
-                    </span>
-                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => { setEditingAddress(address); setShowAddressModal(true) }}
-                  className="text-gray-400 hover:text-indigo-500 transition-colors"
+                  className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-100 rounded-lg transition-colors"
                 >
-                  <Edit size={14} />
+                  <Edit size={13} />
                 </button>
                 <button
-                  onClick={() => {
-                    if (confirm('¿Eliminar esta dirección?'))
-                      deleteAddressMutation.mutate(address.id)
-                  }}
-                  className="text-gray-400 hover:text-red-500 transition-colors"
+                  onClick={() => { if(confirm('¿Eliminar esta dirección?')) deleteAddressMutation.mutate(address.id) }}
+                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={13} />
                 </button>
               </div>
             </div>
           ))}
 
           {client.addresses?.length === 0 && (
-            <p className="text-center text-gray-400 text-sm py-6">
-              No hay direcciones registradas
-            </p>
+            <div className="text-center py-10">
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <MapPin size={22} className="text-gray-300" />
+              </div>
+              <p className="text-gray-400 text-sm font-medium">Sin direcciones registradas</p>
+            </div>
           )}
         </div>
       </div>
