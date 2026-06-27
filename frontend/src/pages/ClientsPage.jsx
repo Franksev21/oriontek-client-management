@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { clientsApi } from '../services/api'
-import { Search, Plus, Trash2, ChevronRight, Users, MapPin, TrendingUp, Star } from 'lucide-react'
+import { Search, Plus, Trash2, ChevronRight, Users, MapPin, TrendingUp } from 'lucide-react'
 import ClientFormModal from '../components/clients/ClientFormModal'
+import toast from 'react-hot-toast'
 
 export default function ClientsPage() {
   const navigate = useNavigate()
@@ -24,8 +25,31 @@ export default function ClientsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => clientsApi.delete(id),
-    onSuccess: () => queryClient.invalidateQueries(['clients', 'stats']),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['clients', 'stats'])
+      toast.success('Cliente eliminado')
+    },
+    onError: () => toast.error('No se pudo eliminar el cliente'),
   })
+
+  const handleDelete = (e, id, name) => {
+    e.stopPropagation()
+    toast((t) => (
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        <p style={{margin:0,fontSize:13,fontWeight:500}}>¿Eliminar a {name}?</p>
+        <div style={{display:'flex',gap:8}}>
+          <button
+            onClick={() => { toast.dismiss(t.id); deleteMutation.mutate(id) }}
+            style={{flex:1,background:'#ef4444',color:'white',border:'none',borderRadius:8,padding:'6px 12px',fontSize:12,cursor:'pointer',fontWeight:500}}
+          >Eliminar</button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            style={{flex:1,background:'#f3f4f6',color:'#374151',border:'none',borderRadius:8,padding:'6px 12px',fontSize:12,cursor:'pointer',fontWeight:500}}
+          >Cancelar</button>
+        </div>
+      </div>
+    ), { duration: 5000 })
+  }
 
   const colors = [
     'from-violet-500 to-purple-600',
@@ -37,7 +61,6 @@ export default function ClientsPage() {
 
   return (
     <div>
-      {/* Stats */}
       {stats && (
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-4 text-white shadow-lg shadow-indigo-200">
@@ -58,11 +81,10 @@ export default function ClientsPage() {
         </div>
       )}
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-800">Clientes</h1>
-          <p className="text-xs text-gray-500 mt-0.5">{data?.totalElements || 0} registros</p>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-white">Clientes</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{data?.totalElements || 0} registros</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -73,7 +95,6 @@ export default function ClientsPage() {
         </button>
       </div>
 
-      {/* Search */}
       <div className="relative mb-4">
         <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
@@ -81,20 +102,19 @@ export default function ClientsPage() {
           placeholder="Buscar por nombre o email..."
           value={search}
           onChange={e => { setSearch(e.target.value); setPage(0) }}
-          className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
+          className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm dark:text-white dark:placeholder-gray-500"
         />
       </div>
 
-      {/* List */}
       {isLoading ? (
         <div className="space-y-3">
           {[1,2,3].map(i => (
-            <div key={i} className="bg-white rounded-2xl p-4 animate-pulse">
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-4 animate-pulse">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gray-200" />
+                <div className="w-11 h-11 rounded-xl bg-gray-200 dark:bg-gray-700" />
                 <div className="flex-1">
-                  <div className="h-3.5 bg-gray-200 rounded w-32 mb-2" />
-                  <div className="h-3 bg-gray-100 rounded w-48" />
+                  <div className="h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2" />
+                  <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-48" />
                 </div>
               </div>
             </div>
@@ -106,7 +126,7 @@ export default function ClientsPage() {
             <div
               key={client.id}
               onClick={() => navigate(`/clients/${client.id}`)}
-              className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-indigo-100 transition-all hover:-translate-y-0.5"
+              className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-indigo-100 dark:hover:border-indigo-800 transition-all hover:-translate-y-0.5"
             >
               <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${colors[i % colors.length]} flex items-center justify-center flex-shrink-0 shadow-sm`}>
                 <span className="text-white font-bold text-sm">
@@ -114,54 +134,44 @@ export default function ClientsPage() {
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-800 truncate">{client.fullName}</p>
+                <p className="font-semibold text-gray-800 dark:text-white truncate">{client.fullName}</p>
                 <p className="text-xs text-gray-400 truncate mt-0.5">{client.email}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-xs bg-indigo-50 text-indigo-600 font-medium px-2.5 py-1 rounded-full">
+                <span className="text-xs bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-medium px-2.5 py-1 rounded-full">
                   {client.addressCount} dir.
                 </span>
                 <button
-                  onClick={(e) => { e.stopPropagation(); if(confirm('¿Eliminar?')) deleteMutation.mutate(client.id) }}
-                  className="p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                  onClick={(e) => handleDelete(e, client.id, client.fullName)}
+                  className="p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                 >
                   <Trash2 size={14} />
                 </button>
-                <ChevronRight size={16} className="text-gray-300" />
+                <ChevronRight size={16} className="text-gray-300 dark:text-gray-600" />
               </div>
             </div>
           ))}
 
           {data?.content?.length === 0 && (
             <div className="text-center py-16">
-              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Users size={28} className="text-gray-300" />
               </div>
               <p className="text-gray-400 font-medium">No se encontraron clientes</p>
-              <p className="text-gray-300 text-sm mt-1">Intenta con otro término de búsqueda</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Pagination */}
       {data && data.totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-6">
-          <button
-            onClick={() => setPage(p => p - 1)}
-            disabled={data.first}
-            className="px-4 py-2 rounded-xl border text-sm font-medium disabled:opacity-40 hover:bg-gray-50 transition-colors"
-          >
+          <button onClick={() => setPage(p => p - 1)} disabled={data.first}
+            className="px-4 py-2 rounded-xl border dark:border-gray-700 text-sm font-medium disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300">
             Anterior
           </button>
-          <span className="px-4 py-2 text-sm text-gray-500 font-medium">
-            {page + 1} / {data.totalPages}
-          </span>
-          <button
-            onClick={() => setPage(p => p + 1)}
-            disabled={data.last}
-            className="px-4 py-2 rounded-xl border text-sm font-medium disabled:opacity-40 hover:bg-gray-50 transition-colors"
-          >
+          <span className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 font-medium">{page + 1} / {data.totalPages}</span>
+          <button onClick={() => setPage(p => p + 1)} disabled={data.last}
+            className="px-4 py-2 rounded-xl border dark:border-gray-700 text-sm font-medium disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300">
             Siguiente
           </button>
         </div>
@@ -173,6 +183,7 @@ export default function ClientsPage() {
           onSuccess={() => {
             setShowModal(false)
             queryClient.invalidateQueries(['clients', 'stats'])
+            toast.success('Cliente creado')
           }}
         />
       )}

@@ -45,7 +45,7 @@ public class ClientQueryHandler {
 
         var page = (query.search() != null && !query.search().isBlank())
             ? clientRepo.searchClients(query.search().trim(), pageable)
-            : clientRepo.findAll(pageable);
+            : clientRepo.findAllActive(pageable);
 
         var content = page.getContent().stream()
             .map(this::toSummaryResponse)
