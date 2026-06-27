@@ -5,6 +5,7 @@ import { clientsApi } from '../services/api'
 import { ArrowLeft, Plus, Trash2, Edit, MapPin, Mail, Phone, Star } from 'lucide-react'
 import ClientFormModal from '../components/clients/ClientFormModal'
 import AddressFormModal from '../components/addresses/AddressFormModal'
+import AddressMap from '../components/addresses/AddressMap'
 
 export default function ClientDetailPage() {
   const { id } = useParams()
@@ -151,6 +152,11 @@ export default function ClientDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Mapa */}
+        {client.addresses?.length > 0 && (
+          <AddressMap addresses={client.addresses} />
+        )}
       </div>
 
       {showEditModal && (
