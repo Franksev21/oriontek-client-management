@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { clientsApi } from '../services/api'
 import { Search, Plus, Trash2, ChevronRight, Users, MapPin, TrendingUp } from 'lucide-react'
 import ClientFormModal from '../components/clients/ClientFormModal'
+import FilterPanel from '../components/clients/FilterPanel'
 import toast from 'react-hot-toast'
 
 export default function ClientsPage() {
@@ -12,10 +13,17 @@ export default function ClientsPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
   const [showModal, setShowModal] = useState(false)
+  const [filters, setFilters] = useState({ city: '', country: '', sortBy: 'firstName', sortDir: 'asc' })
 
   const { data, isLoading } = useQuery({
-    queryKey: ['clients', search, page],
-    queryFn: () => clientsApi.getAll({ search, page, size: 10 }).then(r => r.data.data),
+    queryKey: ['clients', search, page, filters],
+    queryFn: () => clientsApi.getAll({
+      search, page, size: 10,
+      city: filters.city,
+      country: filters.country,
+      sortBy: filters.sortBy,
+      sortDir: filters.sortDir,
+    }).then(r => r.data.data),
   })
 
   const { data: stats } = useQuery({
@@ -38,14 +46,14 @@ export default function ClientsPage() {
       <div style={{display:'flex',flexDirection:'column',gap:8}}>
         <p style={{margin:0,fontSize:13,fontWeight:500}}>¿Eliminar a {name}?</p>
         <div style={{display:'flex',gap:8}}>
-          <button
-            onClick={() => { toast.dismiss(t.id); deleteMutation.mutate(id) }}
-            style={{flex:1,background:'#ef4444',color:'white',border:'none',borderRadius:8,padding:'6px 12px',fontSize:12,cursor:'pointer',fontWeight:500}}
-          >Eliminar</button>
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            style={{flex:1,background:'#f3f4f6',color:'#374151',border:'none',borderRadius:8,padding:'6px 12px',fontSize:12,cursor:'pointer',fontWeight:500}}
-          >Cancelar</button>
+          <button onClick={() => { toast.dismiss(t.id); deleteMutation.mutate(id) }}
+            style={{flex:1,background:'#ef4444',color:'white',border:'none',borderRadius:8,padding:'6px 12px',fontSize:12,cursor:'pointer',fontWeight:500}}>
+            Eliminar
+          </button>
+          <button onClick={() => toast.dismiss(t.id)}
+            style={{flex:1,background:'#f3f4f6',color:'#374151',border:'none',borderRadius:8,padding:'6px 12px',fontSize:12,cursor:'pointer',fontWeight:500}}>
+            Cancelar
+          </button>
         </div>
       </div>
     ), { duration: 5000 })
@@ -95,7 +103,7 @@ export default function ClientsPage() {
         </button>
       </div>
 
-      <div className="relative mb-4">
+      <div className="relative mb-3">
         <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
@@ -105,6 +113,8 @@ export default function ClientsPage() {
           className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm dark:text-white dark:placeholder-gray-500"
         />
       </div>
+
+      <FilterPanel onFilter={(f) => { setFilters(f); setPage(0) }} />
 
       {isLoading ? (
         <div className="space-y-3">

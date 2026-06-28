@@ -8,7 +8,6 @@ import com.oriontek.application.handlers.command.ClientCommandHandler;
 import com.oriontek.application.handlers.query.ClientQueryHandler;
 import com.oriontek.application.queries.client.ClientQueries;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -26,110 +25,68 @@ public class ClientController {
     private final AddressCommandHandler addressCommandHandler;
     private final ClientQueryHandler queryHandler;
 
-    public ClientController(
-        ClientCommandHandler commandHandler,
-        AddressCommandHandler addressCommandHandler,
-        ClientQueryHandler queryHandler
-    ) {
+    public ClientController(ClientCommandHandler commandHandler, AddressCommandHandler addressCommandHandler, ClientQueryHandler queryHandler) {
         this.commandHandler = commandHandler;
         this.addressCommandHandler = addressCommandHandler;
         this.queryHandler = queryHandler;
     }
 
     @GetMapping
-    @Operation(summary = "List all clients")
+    @Operation(summary = "List clients with advanced filters")
     public ResponseEntity<ApiResponse<PagedResponse<ClientSummaryResponse>>> getAllClients(
         @RequestParam(required = false) String search,
+        @RequestParam(required = false) String city,
+        @RequestParam(required = false) String country,
+        @RequestParam(required = false) Integer minAddresses,
+        @RequestParam(required = false) Integer maxAddresses,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(defaultValue = "firstName") String sortBy,
         @RequestParam(defaultValue = "asc") String sortDir
     ) {
-        var query = new ClientQueries.GetAllClientsQuery(search, page, size, sortBy, sortDir);
-        var result = queryHandler.handle(query);
-        return ResponseEntity.ok(ApiResponse.ok("Clients retrieved successfully", result));
+        var query = new ClientQueries.GetAllClientsQuery(search, city, country, minAddresses, maxAddresses, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(ApiResponse.ok("Clients retrieved", queryHandler.handle(query)));
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get client by ID")
     public ResponseEntity<ApiResponse<ClientResponse>> getClientById(@PathVariable UUID id) {
-        var result = queryHandler.handle(new ClientQueries.GetClientByIdQuery(id));
-        return ResponseEntity.ok(ApiResponse.ok("Client retrieved successfully", result));
+        return ResponseEntity.ok(ApiResponse.ok("Client retrieved", queryHandler.handle(new ClientQueries.GetClientByIdQuery(id))));
     }
 
     @GetMapping("/stats")
-    @Operation(summary = "Get client statistics")
     public ResponseEntity<ApiResponse<ClientStatsResponse>> getStats() {
-        var result = queryHandler.handle(new ClientQueries.GetClientStatsQuery());
-        return ResponseEntity.ok(ApiResponse.ok("Stats retrieved successfully", result));
+        return ResponseEntity.ok(ApiResponse.ok("Stats retrieved", queryHandler.handle(new ClientQueries.GetClientStatsQuery())));
     }
 
     @PostMapping
-    @Operation(summary = "Create a new client")
-    public ResponseEntity<ApiResponse<Object>> createClient(
-        @Valid @RequestBody ClientCommands.CreateClientCommand command
-    ) {
-        var result = commandHandler.handle(command);
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.ok("Client created successfully", result));
+    public ResponseEntity<ApiResponse<Object>> createClient(@Valid @RequestBody ClientCommands.CreateClientCommand command) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Client created", commandHandler.handle(command)));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update an existing client")
-    public ResponseEntity<ApiResponse<Object>> updateClient(
-        @PathVariable UUID id,
-        @Valid @RequestBody ClientCommands.UpdateClientCommand command
-    ) {
-        var cmd = new ClientCommands.UpdateClientCommand(
-            id, command.firstName(), command.lastName(), command.email(), command.phone()
-        );
-        var result = commandHandler.handle(cmd);
-        return ResponseEntity.ok(ApiResponse.ok("Client updated successfully", result));
+    public ResponseEntity<ApiResponse<Object>> updateClient(@PathVariable UUID id, @Valid @RequestBody ClientCommands.UpdateClientCommand command) {
+        var cmd = new ClientCommands.UpdateClientCommand(id, command.firstName(), command.lastName(), command.email(), command.phone());
+        return ResponseEntity.ok(ApiResponse.ok("Client updated", commandHandler.handle(cmd)));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Soft delete a client")
     public ResponseEntity<ApiResponse<Object>> deleteClient(@PathVariable UUID id) {
-        var result = commandHandler.handle(new ClientCommands.DeleteClientCommand(id));
-        return ResponseEntity.ok(ApiResponse.ok("Client deleted successfully", result));
+        return ResponseEntity.ok(ApiResponse.ok("Client deleted", commandHandler.handle(new ClientCommands.DeleteClientCommand(id))));
     }
 
     @PostMapping("/{clientId}/addresses")
-    @Operation(summary = "Add address to client")
-    public ResponseEntity<ApiResponse<Object>> addAddress(
-        @PathVariable UUID clientId,
-        @Valid @RequestBody AddressCommand.CreateAddressCommand command
-    ) {
-        var result = addressCommandHandler.handle(command, clientId);
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.ok("Address added successfully", result));
+    public ResponseEntity<ApiResponse<Object>> addAddress(@PathVariable UUID clientId, @Valid @RequestBody AddressCommand.CreateAddressCommand command) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Address added", addressCommandHandler.handle(command, clientId)));
     }
 
     @PutMapping("/{clientId}/addresses/{addressId}")
-    @Operation(summary = "Update a client address")
-    public ResponseEntity<ApiResponse<Object>> updateAddress(
-        @PathVariable UUID clientId,
-        @PathVariable UUID addressId,
-        @Valid @RequestBody AddressCommand.UpdateAddressCommand command
-    ) {
-        var cmd = new AddressCommand.UpdateAddressCommand(
-            addressId, clientId,
-            command.street(), command.city(), command.state(),
-            command.country(), command.zipCode(), command.primary()
-        );
-        var result = addressCommandHandler.handle(cmd);
-        return ResponseEntity.ok(ApiResponse.ok("Address updated successfully", result));
+    public ResponseEntity<ApiResponse<Object>> updateAddress(@PathVariable UUID clientId, @PathVariable UUID addressId, @Valid @RequestBody AddressCommand.UpdateAddressCommand command) {
+        var cmd = new AddressCommand.UpdateAddressCommand(addressId, clientId, command.street(), command.city(), command.state(), command.country(), command.zipCode(), command.primary());
+        return ResponseEntity.ok(ApiResponse.ok("Address updated", addressCommandHandler.handle(cmd)));
     }
 
     @DeleteMapping("/{clientId}/addresses/{addressId}")
-    @Operation(summary = "Delete a client address")
-    public ResponseEntity<ApiResponse<Object>> deleteAddress(
-        @PathVariable UUID clientId,
-        @PathVariable UUID addressId
-    ) {
-        var result = addressCommandHandler.handle(
-            new AddressCommand.DeleteAddressCommand(addressId, clientId)
-        );
-        return ResponseEntity.ok(ApiResponse.ok("Address deleted successfully", result));
+    public ResponseEntity<ApiResponse<Object>> deleteAddress(@PathVariable UUID clientId, @PathVariable UUID addressId) {
+        return ResponseEntity.ok(ApiResponse.ok("Address deleted", addressCommandHandler.handle(new AddressCommand.DeleteAddressCommand(addressId, clientId))));
     }
 }

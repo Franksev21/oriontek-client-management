@@ -14,8 +14,23 @@ import java.util.UUID;
 @Repository
 public interface ClientJpaRepository extends JpaRepository<ClientEntity, UUID> {
 
-    @Query("SELECT c FROM ClientEntity c WHERE c.deletedAt IS NULL AND (LOWER(c.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(c.email) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<ClientEntity> searchClients(@Param("search") String search, Pageable pageable);
+    @Query("""
+        SELECT DISTINCT c FROM ClientEntity c
+        LEFT JOIN c.addresses a
+        WHERE c.deletedAt IS NULL
+        AND (:search IS NULL OR
+            LOWER(c.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(c.lastName)  LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(c.email)     LIKE LOWER(CONCAT('%', :search, '%')))
+        AND (:city IS NULL OR LOWER(a.city) LIKE LOWER(CONCAT('%', :city, '%')))
+        AND (:country IS NULL OR LOWER(a.country) LIKE LOWER(CONCAT('%', :country, '%')))
+    """)
+    Page<ClientEntity> findWithFilters(
+        @Param("search") String search,
+        @Param("city") String city,
+        @Param("country") String country,
+        Pageable pageable
+    );
 
     @Query("SELECT c FROM ClientEntity c WHERE c.deletedAt IS NULL")
     Page<ClientEntity> findAllActive(Pageable pageable);

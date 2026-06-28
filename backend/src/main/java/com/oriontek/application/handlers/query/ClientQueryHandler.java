@@ -1,6 +1,5 @@
 package com.oriontek.application.handlers.query;
 
-import com.oriontek.application.dto.response.ResponseDtos;
 import com.oriontek.application.dto.response.ResponseDtos.*;
 import com.oriontek.application.queries.client.ClientQueries;
 import com.oriontek.domain.exception.ClientNotFoundException;
@@ -36,15 +35,17 @@ public class ClientQueryHandler {
 
     public PagedResponse<ClientSummaryResponse> handle(ClientQueries.GetAllClientsQuery query) {
         var sort = Sort.by(
-            query.sortDir().equalsIgnoreCase("desc")
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC,
+            query.sortDir().equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC,
             query.sortBy()
         );
         var pageable = PageRequest.of(query.page(), query.size(), sort);
 
-        var page = (query.search() != null && !query.search().isBlank())
-            ? clientRepo.searchClients(query.search().trim(), pageable)
+        String search = (query.search() != null && !query.search().isBlank()) ? query.search().trim() : null;
+        String city = (query.city() != null && !query.city().isBlank()) ? query.city().trim() : null;
+        String country = (query.country() != null && !query.country().isBlank()) ? query.country().trim() : null;
+
+        var page = (search != null || city != null || country != null)
+            ? clientRepo.findWithFilters(search, city, country, pageable)
             : clientRepo.findAllActive(pageable);
 
         var content = page.getContent().stream()
@@ -66,56 +67,36 @@ public class ClientQueryHandler {
         long totalClients = clientRepo.countActive();
         long totalAddresses = addressRepo.count();
         double avg = totalClients > 0 ? (double) totalAddresses / totalClients : 0.0;
-
-        // Clients created this month
         var firstOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
         var allClients = clientRepo.findAll();
         long newThisMonth = allClients.stream()
-            .filter(c -> c.getCreatedAt() != null && c.getCreatedAt().isAfter(firstOfMonth))
+            .filter(c -> c.getCreatedAt() != null && c.getCreatedAt().isAfter(firstOfMonth) && c.getDeletedAt() == null)
             .count();
-
         return new ClientStatsResponse(totalClients, totalAddresses, avg, newThisMonth);
     }
 
-    // Mappers
     private ClientResponse toDetailResponse(ClientEntity c) {
         var addresses = c.getAddresses().stream().map(this::toAddressResponse).toList();
         return new ClientResponse(
-            c.getId(),
-            c.getFirstName(),
-            c.getLastName(),
+            c.getId(), c.getFirstName(), c.getLastName(),
             c.getFirstName() + " " + c.getLastName(),
-            c.getEmail(),
-            c.getPhone(),
-            addresses,
-            addresses.size(),
-            c.getCreatedAt(),
-            c.getUpdatedAt()
+            c.getEmail(), c.getPhone(), addresses, addresses.size(),
+            c.getCreatedAt(), c.getUpdatedAt()
         );
     }
 
     private ClientSummaryResponse toSummaryResponse(ClientEntity c) {
         return new ClientSummaryResponse(
-            c.getId(),
-            c.getFirstName() + " " + c.getLastName(),
-            c.getEmail(),
-            c.getPhone(),
-            c.getAddresses().size(),
-            c.getCreatedAt()
+            c.getId(), c.getFirstName() + " " + c.getLastName(),
+            c.getEmail(), c.getPhone(), c.getAddresses().size(), c.getCreatedAt()
         );
     }
 
     private AddressResponse toAddressResponse(AddressEntity a) {
         return new AddressResponse(
-            a.getId(),
-            a.getStreet(),
-            a.getCity(),
-            a.getState(),
-            a.getCountry(),
-            a.getZipCode(),
-            a.isPrimary(),
-            a.getCreatedAt(),
-            a.getUpdatedAt()
+            a.getId(), a.getStreet(), a.getCity(), a.getState(),
+            a.getCountry(), a.getZipCode(), a.isPrimary(),
+            a.getCreatedAt(), a.getUpdatedAt()
         );
     }
 }

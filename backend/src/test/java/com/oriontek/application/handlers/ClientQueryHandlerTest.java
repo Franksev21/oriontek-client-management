@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,9 +47,7 @@ class ClientQueryHandlerTest {
     @DisplayName("should return client when found by id")
     void shouldReturnClientById() {
         when(clientRepo.findById(clientId)).thenReturn(Optional.of(mockClient));
-
         var result = handler.handle(new ClientQueries.GetClientByIdQuery(clientId));
-
         assertThat(result.email()).isEqualTo("juan@test.com");
         assertThat(result.fullName()).isEqualTo("Juan Pérez");
     }
@@ -57,35 +56,30 @@ class ClientQueryHandlerTest {
     @DisplayName("should throw ClientNotFoundException when not found")
     void shouldThrowWhenNotFound() {
         when(clientRepo.findById(clientId)).thenReturn(Optional.empty());
-
         assertThatThrownBy(() ->
             handler.handle(new ClientQueries.GetClientByIdQuery(clientId))
         ).isInstanceOf(ClientNotFoundException.class);
     }
 
     @Test
-    @DisplayName("should return paged clients when no search term")
+    @DisplayName("should return paged clients when no filters")
     void shouldReturnPagedClients() {
         var page = new PageImpl<>(List.of(mockClient));
-        when(clientRepo.findAll(any(Pageable.class))).thenReturn(page);
-
-        var query = new ClientQueries.GetAllClientsQuery(null, 0, 10, "firstName", "asc");
+        when(clientRepo.findAllActive(any(Pageable.class))).thenReturn(page);
+        var query = new ClientQueries.GetAllClientsQuery(null, null, null, null, null, 0, 10, "firstName", "asc");
         var result = handler.handle(query);
-
         assertThat(result.content()).hasSize(1);
         assertThat(result.totalElements()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("should search clients when search term provided")
-    void shouldSearchClients() {
+    @DisplayName("should filter clients when filters provided")
+    void shouldFilterClients() {
         var page = new PageImpl<>(List.of(mockClient));
-        when(clientRepo.searchClients(eq("juan"), any(Pageable.class))).thenReturn(page);
-
-        var query = new ClientQueries.GetAllClientsQuery("juan", 0, 10, "firstName", "asc");
+        when(clientRepo.findWithFilters(eq("juan"), isNull(), isNull(), any(Pageable.class))).thenReturn(page);
+        var query = new ClientQueries.GetAllClientsQuery("juan", null, null, null, null, 0, 10, "firstName", "asc");
         var result = handler.handle(query);
-
         assertThat(result.content()).hasSize(1);
-        verify(clientRepo).searchClients(eq("juan"), any(Pageable.class));
+        verify(clientRepo).findWithFilters(eq("juan"), isNull(), isNull(), any(Pageable.class));
     }
 }

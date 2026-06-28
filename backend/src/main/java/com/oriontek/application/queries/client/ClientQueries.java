@@ -7,13 +7,16 @@ public final class ClientQueries {
     public record GetClientByIdQuery(UUID id) {}
 
     public record GetAllClientsQuery(
-        String search,   // optional search term
+        String search,
+        String city,
+        String country,
+        Integer minAddresses,
+        Integer maxAddresses,
         int page,
         int size,
-        String sortBy,   // field to sort by
-        String sortDir   // asc or desc
+        String sortBy,
+        String sortDir
     ) {
-        // Compact constructor with defaults
         public GetAllClientsQuery {
             if (page < 0) page = 0;
             if (size < 1 || size > 100) size = 10;
